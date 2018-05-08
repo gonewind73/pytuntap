@@ -1,0 +1,8 @@
+LICENSE
+MANIFEST.in
+README.rst
+setup.py
+python_pytuntap.egg-info/PKG-INFO
+python_pytuntap.egg-info/SOURCES.txt
+python_pytuntap.egg-info/dependency_links.txt
+python_pytuntap.egg-info/top_level.txt
