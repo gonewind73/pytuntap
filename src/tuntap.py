@@ -134,13 +134,14 @@ class Tap(object):
         try:
             mode_name = 'tun' if self.nic_type=="Tun" else 'tap'
             print('ip tuntap delete mode '+ mode_name + " "+ self.name)
-#            subprocess.check_call('ip addr delete '+self.ip+'/%d '%self.get_maskbits(self.mask) + " dev "+ self.name , shell=True)
-            subprocess.check_call('ip tuntap delete mode '+'tun ' if self.nic_type=="Tun" else 'tap ' + self.name , shell=True)
+            subprocess.check_call('ip addr delete '+self.ip+'/%d '%self.get_maskbits(self.mask) + " dev "+ self.name , shell=True)
+            subprocess.check_call('ip tuntap delete mode '+ mode_name + " "+ self.name , shell=True)
 
         except Exception as e:
             print(e)
             pass
         pass
+
     def read(self):
         self.read_lock.acquire()
         data = os.read(self.handle,1522)
