@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 
 setup(name='python-pytuntap',
+      py_modules = ["tuntap"],
       author='gonewind.he',
       author_email='gonewind.he@gmail.com',
       maintainer='gonewind',

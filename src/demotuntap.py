@@ -5,7 +5,7 @@ from _thread import start_new_thread
 import traceback
 
 def readtest(tap):
-    while True:
+    while not tap.quitting:
         p = tap.read()
         if not p:
             continue
@@ -24,6 +24,8 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--nic_type', default='Tun',dest='nic_type',
             help='set type Tun or Tap')
+    parser.add_option('--nic_name', default='',dest='nic_name',
+            help='set device name')
     parser.add_option('--tap-addr', default='192.168.33.10',dest='taddr',
             help='set tunnel local address')
     parser.add_option('--tap-netmask', default='255.255.255.0',dest='tmask',
