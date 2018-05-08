@@ -16,8 +16,6 @@ import logging
 import os
 import math
 
-
-
 if sys.platform.startswith("win"):
     import winreg as reg
     import win32file
@@ -37,10 +35,21 @@ class Packet(object):
     def load(self,frame):
         self.data = frame[12+2:]
 
-
     def get_version(self):
         return self.data[0]>>4
 
+    def get_src(self):
+        return self.data[12:16]
+
+    def get_dst(self):
+        return self.data[12:16]
+
+
+def TunTap(nic_type):
+    if not sys.platform.startswith("win"):
+        return Tap(nic_type)
+    else:
+        return WinTap(nic_type)
 
 class Tap(object):
     def __init__(self,nic_type):
@@ -120,10 +129,16 @@ class Tap(object):
 #         subprocess.check_call('route add -net 192.168.0.0/24 gw 192.168.10.1 tun0',
 #                               shell=True)
     def close(self):
+        print(self.name)
         os.close(self.handle)
         try:
-            subprocess.check_call('ip addr delete '+self.ip+'/%d '%self.get_maskbits(self.mask) + " dev "+ self.name , shell=True)
-        except:
+            mode_name = 'tun' if self.nic_type=="Tun" else 'tap'
+            print('ip tuntap delete mode '+ mode_name + " "+ self.name)
+#            subprocess.check_call('ip addr delete '+self.ip+'/%d '%self.get_maskbits(self.mask) + " dev "+ self.name , shell=True)
+            subprocess.check_call('ip tuntap delete mode '+'tun ' if self.nic_type=="Tun" else 'tap ' + self.name , shell=True)
+
+        except Exception as e:
+            print(e)
             pass
         pass
     def read(self):
@@ -212,7 +227,7 @@ class WinTap(Tap):
                                           0,#win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
                                           None, win32file.OPEN_EXISTING,
                                           win32file.FILE_ATTRIBUTE_SYSTEM | win32file.FILE_FLAG_OVERLAPPED,None)
-    
+
 #         print(handle)
 
         if self.handle:
@@ -237,7 +252,7 @@ class WinTap(Tap):
             if self.nic_type=="Tun":
                 flag =  self.TAP_IOCTL_CONFIG_TUN
             result = win32file.DeviceIoControl(self.handle, flag,ipcode, 16,None)
-            print("config nic result",result)                
+            print("config nic result",result)
 #             result = win32file.DeviceIoControl(self.handle, self.TAP_IOCTL_CONFIG_TUN,
 #                                               ipcode, 16,None)
 #             print("config tun",result)
@@ -321,15 +336,16 @@ class Test(unittest.TestCase):
     def readtest(self,tap):
         while True:
             p = tap.read()
-            print(p)
             if not p:
                 continue
-            packet = Packet(frame=p)
+            if tap.nic_type == "Tap":
+                packet = Packet(frame=p)
+            else:
+                packet = p
             if not packet.get_version()==4:
                 continue
             print(packet.data)
-            q = p[:12] + p[16:20] + p[12:16] + p[20:]
-            tap.write(q)
+
 
 
     def testTap(self):
