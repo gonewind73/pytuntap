@@ -9,9 +9,8 @@ License: MIT (see LICENSE)
 Installation and Dependencies
 -----------------------------
 
-Install ``pytuntap`` with ``pip install python-pytuntap`` or `download this archive
-<https://github.com/gonewind73/pytuntap/zipball/v1.0.0>`_, decompress it and
-execute ``python setup.py install``.
+Install ``pytuntap`` with ``pip install python-pytuntap`` 
+
 As ``pytuntap`` is python wrapper for tuntap driver on Linux , and openvpn driver on
 Windows. If you use it on windows, you should install openvpn's tap driver first.
 please refer to openvpn ,how to install it .
