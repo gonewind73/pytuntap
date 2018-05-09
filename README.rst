@@ -22,13 +22,13 @@ NOTE: On most distributions you will need to be root to create TUN/TAP devices.
 
 To create a TUN device::
 
-    from pytuntap import TunTapDevice
+    from tuntap import TunTapDevice
 
     tun = TunTapDevice(nic_type="Tun")
 
 To create a TAP device::
 
-    from pytun import TunTapDevice
+    from tuntap import TunTapDevice
 
     tap = TunTapDevice(nic_type="Tap")
 
