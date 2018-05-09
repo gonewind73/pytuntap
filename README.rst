@@ -9,7 +9,7 @@ License: MIT (see LICENSE)
 Installation and Dependencies
 -----------------------------
 
-Install ``pytuntap`` with ``pip install python-pytuntap`` 
+Install ``pytuntap`` with ``pip install python-pytuntap``
 
 As ``pytuntap`` is python wrapper for tuntap driver on Linux , and openvpn driver on
 Windows. If you use it on windows, you should install openvpn's tap driver first.
@@ -22,15 +22,15 @@ NOTE: On most distributions you will need to be root to create TUN/TAP devices.
 
 To create a TUN device::
 
-    from tuntap import TunTapDevice
+    from tuntap import TunTap
 
-    tun = TunTapDevice(nic_type="Tun")
+    tun = TunTap(nic_type="Tun",nic_name="tun0")
 
 To create a TAP device::
 
-    from tuntap import TunTapDevice
+    from tuntap import TunTap
 
-    tap = TunTapDevice(nic_type="Tap")
+    tap = TunTap(nic_type="Tap",nic_name="tap0")
 
 To config device:
 
@@ -47,7 +47,7 @@ If the device is a TAP you can also get/set its MAC address::
 To read/write to the device, use the methods ``read(size)`` and
 ``write(buf)``::
 
-    buf = tun.read(tun.mtu)
+    buf = tun.read(size)
     tun.write(buf)
 
 To close the device::

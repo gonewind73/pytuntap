@@ -76,6 +76,7 @@ class Tap(object):
     def __init__(self,nic_type,nic_name=None):
         self.nic_type = nic_type
         self.name = nic_name
+        self.mac = b"\x00"*6
         self.handle = None
         self.ip = None
         self.mask = None
@@ -220,17 +221,17 @@ class Tap(object):
 
         return :
             int:  writed bytes
-       
-        '''
-        self.write_lock.acquire()
 
+        '''
+        result = 0
+        self.write_lock.acquire()
         try:
             result = os.write(self.handle,data)
         except:
             pass
         self.write_lock.release()
         return result
-        pass
+
 
 class WinTap(Tap):
     '''
@@ -267,11 +268,9 @@ class WinTap(Tap):
             try:
                 for i in range(10000):
                     key_name = reg.EnumKey(adapters, i)
-#                     print(key_name)
                     with reg.OpenKey(adapters, key_name) as adapter:
                         try:
                             component_id = reg.QueryValueEx(adapter, 'ComponentId')[0]
-#                             print(component_id)
                             if component_id == self.component_id:
                                 regid = reg.QueryValueEx(adapter, 'NetCfgInstanceId')[0]
                                 return regid
@@ -284,31 +283,30 @@ class WinTap(Tap):
         return (device_type << 16) | (access << 14) | (function << 2) | method;
 
     def _TAP_CONTROL_CODE(self,request, method):
-#         print("%x"%self.CTL_CODE(34, request, method, 0))
         return self._CTL_CODE(34, request, method, 0)
 
-    def _getNameByMac(self,mac_string):
-        # print(mac_string)
+    def _mac2string(self,mac):
+        mac_string = ""
+        for i in range(len(mac)):
+            mac_string += "%02X"%mac[i]
+            if i< len(mac)-1:
+                mac_string +="-"
+        return mac_string
+
+    def _getNameByMac(self,mac):
         result = subprocess.check_output("ipconfig/all",shell=True).decode("gbk").encode().decode()
-
         res = result.split("适配器")
-
         for i in range(1,len(res)):
-            if res[i].find(mac_string)>0:
-
+            if res[i].find(self._mac2string(mac))>0:
                 return res[i].split(":")[0].strip()
 
     def create(self):
         guid = self._get_device_guid()
-#         print('guid: ', guid)
         self.handle = win32file.CreateFile("\\\\.\\Global\\%s.tap"%guid,
                                           win32file.GENERIC_READ | win32file.GENERIC_WRITE,
                                           0,#win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
                                           None, win32file.OPEN_EXISTING,
                                           win32file.FILE_ATTRIBUTE_SYSTEM | win32file.FILE_FLAG_OVERLAPPED,None)
-
-#         print(handle)
-
         if self.handle:
             return self
         else:
@@ -320,10 +318,7 @@ class WinTap(Tap):
         self.gateway = gateway
         try:
             code = b'\x01\x00\x00\x00'
-#             code[0]=b'\x01'
             result = win32file.DeviceIoControl(self.handle,self.TAP_IOCTL_SET_MEDIA_STATUS,code,512,None)
-            # print("status",result)
-
             ipnet = struct.pack("I",struct.unpack("I", socket.inet_aton(self.ip))[0]&struct.unpack("I", socket.inet_aton(self.mask))[0])
             ipcode = socket.inet_aton(self.ip)+ipnet+socket.inet_aton(self.mask)
             if self.nic_type=="Tap":
@@ -331,31 +326,13 @@ class WinTap(Tap):
             if self.nic_type=="Tun":
                 flag =  self.TAP_IOCTL_CONFIG_TUN
             result = win32file.DeviceIoControl(self.handle, flag,ipcode, 16,None)
-            # print("config nic result",result)
-#             result = win32file.DeviceIoControl(self.handle, self.TAP_IOCTL_CONFIG_TUN,
-#                                               ipcode, 16,None)
-#             print("config tun",result)
             mac= b'0'*6
-            realmac = win32file.DeviceIoControl(self.handle,self.TAP_IOCTL_GET_MAC,mac,6,None)
-            # print(realmac)
-
-            mac_string = ""
-            for i in range(len(realmac)):
-                mac_string += "%02X"%realmac[i]
-                if i< len(realmac)-1:
-                    mac_string +="-"
-
-            self.name = self.getNameByMac(mac_string)
-            # print(self.name)
+            self.mac = win32file.DeviceIoControl(self.handle,self.TAP_IOCTL_GET_MAC,mac,6,None)
+            self.name = self.getNameByMac(self.mac)
         except:
             win32file.CloseHandle(self.handle)
 
         sargs = r"netsh interface ip set address name=NAME source=static addr=ADDRESS mask=MASK gateway=GATEWAY"
-#         args = sargs.split(" ")
-#         args[5] = "name=\"%s\""%self.name
-#         args[7] = "address=%s"%self.ip
-#         args[8] = "mask=%s"%self.mask
-#         args[9] = "gateway=%s"%self.gateway
         sargs = sargs.replace("NAME","\"%s\""%self.name)
         sargs = sargs.replace("ADDRESS",self.ip)
         sargs = sargs.replace("MASK",self.mask)
@@ -363,9 +340,6 @@ class WinTap(Tap):
             sargs = sargs.replace("gateway=GATEWAY","")
         else:
             sargs = sargs.replace("GATEWAY",self.gateway)
-        # print(sargs)
-
-#         args = 'netsh interface ip set address name=tap0 source=static addr=198.168.1.84 mask=255.255.255.0 gateway=192.168.1.1'
         subprocess.check_call(sargs,shell=True)
 
     def read(self):
