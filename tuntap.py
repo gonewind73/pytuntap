@@ -42,7 +42,7 @@ class Packet(object):
         return self.data[12:16]
 
     def get_dst(self):
-        return self.data[12:16]
+        return self.data[16:20]
 
 
 def TunTap(nic_type,nic_name=None):
@@ -191,7 +191,7 @@ class Tap(object):
             subprocess.check_call('ip tuntap delete mode '+ mode_name + " "+ self.name , shell=True)
 
         except Exception as e:
-            print(e)
+            logging.debug(e)
             pass
         pass
 
@@ -302,7 +302,6 @@ class WinTap(Tap):
 
     def create(self):
         guid = self._get_device_guid()
-        print("\\\\.\\Global\\%s.tap"%guid)
         self.handle = win32file.CreateFile("\\\\.\\Global\\%s.tap"%guid,
                                           win32file.GENERIC_READ | win32file.GENERIC_WRITE,
                                           0,#win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
