@@ -112,7 +112,7 @@ class Tap(object):
         # print(ifr)
         ret = fcntl.ioctl(tun, TUNSETIFF, ifr)
         # print(ret,len(ret),ifr)
-        logging.debug(ifr,ret)
+        logging.debug("%s %s"%(ifr,ret))
         dev, _ = struct.unpack('16sH', ret[:18])
         dev = dev.decode().strip("\x00")
         self.name = dev
@@ -302,6 +302,7 @@ class WinTap(Tap):
 
     def create(self):
         guid = self._get_device_guid()
+        print("\\\\.\\Global\\%s.tap"%guid)
         self.handle = win32file.CreateFile("\\\\.\\Global\\%s.tap"%guid,
                                           win32file.GENERIC_READ | win32file.GENERIC_WRITE,
                                           0,#win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
@@ -328,8 +329,9 @@ class WinTap(Tap):
             result = win32file.DeviceIoControl(self.handle, flag,ipcode, 16,None)
             mac= b'0'*6
             self.mac = win32file.DeviceIoControl(self.handle,self.TAP_IOCTL_GET_MAC,mac,6,None)
-            self.name = self.getNameByMac(self.mac)
-        except:
+            self.name = self._getNameByMac(self.mac)
+        except Exception as exp:
+            logging.debug(exp)
             win32file.CloseHandle(self.handle)
 
         sargs = r"netsh interface ip set address name=NAME source=static addr=ADDRESS mask=MASK gateway=GATEWAY"
