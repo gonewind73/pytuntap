@@ -25,25 +25,40 @@ else:
     import fcntl  # @UnresolvedImport
 
 class Packet(object):
+    '''
+    data layer3 data
+    frame layer2 data 
+    '''
     def __init__(self,data=None,frame=None):
+        self.data = None
         if frame:
             self.load(frame)
             return
-        if data:
+        
+        if len(data)>20:
             self.data = data
 
     def load(self,frame):
-        self.data = frame[12+2:]
+        if len(frame)>34:
+            self.data = frame[12+2:]
 
     def get_version(self):
-        return self.data[0]>>4
+        return self.data[0]>>4 if self.data else 0
 
     def get_src(self):
-        return self.data[12:16]
+        return self.data[12:16] if self.data else None
 
     def get_dst(self):
-        return self.data[16:20]
+        return self.data[16:20]  if self.data else None
+    
+    def get_payload(self):
+        return self.data[(self.data[0]&0x0f)<<2:]  if self.data else None
+    
+    def get_protocol(self):
+        return self.data[9]  if self.data else 0
 
+    def wrap(self,payload,protocol,dst_ip,src_ip):
+        return None
 
 def TunTap(nic_type,nic_name=None):
     '''
